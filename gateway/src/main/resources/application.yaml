@@ -1,0 +1,46 @@
+spring:
+  profiles:
+    active: docker
+  application:
+    name: gateway
+  cloud:
+    gateway:
+      routes:
+        - id: mercado
+          uri: lb://MERCADO-SERVICE
+          predicates:
+            - Path=/mercado/**
+          filters:
+            - StripPrefix=1
+            - name: Retry
+              args:
+                retries: 3
+                methods: GET,POST
+                backoff:
+                  initialInterval: 100ms
+                  maxInterval: 3s
+                  multiplier: 2
+            - name: UsuarioAutenticado
+              args:
+                headerName: Authorization
+
+        - id: produto
+          uri: lb://PRODUTO-SERVICE
+          predicates:
+            - Path=/produto/**
+          filters:
+            - StripPrefix=1
+
+        - id: avaliacao
+          uri: lb://AVALIACAO-SERVICE
+          predicates:
+            - Path=/avaliacao/**
+          filters:
+            - StripPrefix=1
+server:
+  port: 9999
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka

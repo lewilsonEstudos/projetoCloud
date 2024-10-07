@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: config-server+
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/lewilsonEstudos/config-pos
+          clone-on-start: true
+          search-paths:
+            - "config"
+          username: lewilsonestudos
+          //password: ${GITHUB_CONFIG_PASSWAORD}

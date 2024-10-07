@@ -1,0 +1,76 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: RABBITMQ
+    ports:
+      - "5672:5672"    # Porta padrão do RabbitMQ
+      - "15672:15672"  # Interface de gerenciamento
+    volumes:
+      - ./config/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./config/definitions.json:/etc/rabbitmq/definitions.json:ro  # Montar o arquivo de definições
+    networks:
+      - mercados
+  postgres-mercado:
+    image: postgress
+    container_name: POSTGRES-MERCADO
+    environment:
+      - POSTGRES_PASSWORD=123654
+    networks:
+      - mercados
+      -
+  postgres-produto:
+    image: postgress
+    container_name: POSTGRES-PRODUTO
+    environment:
+      - POSTGRES_PASSWORD=123654
+    networks:
+      - mercados
+
+  eureka-service:
+    image: lewilsonfreire/eureka
+    container_name: EUREKA-SERVICE
+    ports:
+      - "8761:8761"
+    networks:
+      - mercados
+  gateway-service:
+    image: lewilsonfreire/gateway
+    networks:
+      - mercados
+    depends_on:
+      - eureka-service
+    ports:
+      - "9999:9999"
+  config-service:
+    image: lewilsonfreire/configservice
+    container_name: CONFIG-SERVICE
+    environment:
+      - GITHUB_CONFIG_PASSWORD=
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      - eureka-service
+    networks:
+      - mercados
+  mercado-service:
+    image: lewilsonfreire/mercado
+    networks:
+      - mercados
+    depends_on:
+      - eureka-service
+      - rabbitmq
+      - postgres-mercado
+  produto-service:
+    image: lewilsonfreire/produto
+    networks:
+      - mercados
+    depends_on:
+      - eureka-service
+      - rabbitmq
+      - postgres-produto
+networks:
+  mercados:
+    driver: bridge
